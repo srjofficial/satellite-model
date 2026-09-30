@@ -38,7 +38,7 @@ Start-Process "cad\view_model.html"
 ```mermaid
 flowchart TD
   subgraph EPS["Electrical Power Subsystem (EPS)"]
-    SP["☀️ Solar Panel (<= 6V)"] --> J7["INA219 #1 (Solar V & mA)"]
+    SP["☀️ Solar Panel (Max 6V)"] --> J7["INA219 #1 (Solar V & mA)"]
     J7 --> CH["TP4056 Charger + DW01 Protection"]
     CH <--> J9["INA219 #2 (Battery V & +/-mA)"]
     J9 <--> BAT["🔋 18650 Li-ion Cell (3.7V)"]
@@ -52,25 +52,25 @@ flowchart TD
   subgraph OAS["OBC & Attitude Subsystem (Tracker)"]
     RAIL5 --> TRK["ESP32 DevKit 30-Pin"]
     LDR["4x LDR Quadrant Bridge"] --> TRK
-    BME["BME280 (Temp/Press/Hum)"] -->|I2C 0x76| TRK
-    MPU["MPU6050 (Pitch/Roll)"] -->|I2C 0x68| TRK
-    J7 -->|I2C 0x40| TRK
-    J9 -->|I2C 0x41| TRK
-    TRK -->|PWM GPIO 18| SRV1["Pan Servo (10°-170°)"]
-    TRK -->|PWM GPIO 19| SRV2["Tilt Servo (20°-160°)"]
+    BME["BME280 (Temp/Press/Hum)"] -->|"I2C (0x76)"| TRK
+    MPU["MPU6050 (Pitch/Roll)"] -->|"I2C (0x68)"| TRK
+    J7 -->|"I2C (0x40)"| TRK
+    J9 -->|"I2C (0x41)"| TRK
+    TRK -->|"PWM GPIO 18"| SRV1["Pan Servo (10°-170°)"]
+    TRK -->|"PWM GPIO 19"| SRV2["Tilt Servo (20°-160°)"]
   end
 
   subgraph PAYLOAD["Camera Payload & Communications"]
     RAIL5 --> CAM["AI-Thinker ESP32-CAM"]
     RAIL3 --> LORA["SX1278 LoRa Module (433 MHz)"]
-    TRK -->|UART2 115200 (GPIO 17 -> GPIO 3)| CAM
-    CAM -->|HSPI: SCK 14, MISO 12, MOSI 13, NSS 15| LORA
+    TRK -->|"UART2 115200 (GPIO 17 to GPIO 3)"| CAM
+    CAM -->|"HSPI (SCK 14, MISO 12, MOSI 13, NSS 15)"| LORA
   end
 
   subgraph GROUND["Ground Segment"]
     LORA -.->|"LoRa RF 433 MHz (SF7, BW 125kHz)"| GS_RF["Ground SX1278"]
     GS_RF --> GS_MCU["Ground ESP32 DevKit"]
-    GS_MCU -->|"USB Serial (PKT,<hex>,<rssi>,<snr>)"| PY["Python Ground Station App"]
+    GS_MCU -->|"USB Serial (PKT, hex, rssi, snr)"| PY["Python Ground Station App"]
     PY --> CSV["📊 telemetry.csv"]
     PY --> JPG["🖼️ Reassembled JPEGs"]
   end
