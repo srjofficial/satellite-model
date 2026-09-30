@@ -11,12 +11,19 @@ A comprehensive, fully open-source **1U CubeSat educational demonstrator (100 mm
 
 ---
 
-## 📌 Interactive 3D Model Preview
+## 🖼️ 3D Model & PCB Previews
 
-Experience the 3D model right in your web browser without installing any CAD software:
-- 🌐 **Launch Local 3D Viewer:** Open [`cad/view_model.html`](cad/view_model.html) in any browser (or double-click it in Windows) for full Orbit controls, real-time Pan/Tilt tracking simulation, and an interactive **Exploded View**!
+| 🛰️ 3D CAD Assembly (OpenSCAD / WebGL) | 🟢 Carrier PCB & Gerber Layout |
+|:---:|:---:|
+| <img src="images/model-3d.png" width="460" alt="CubeSat 3D Model" /> | <img src="images/gerber-preview.png" width="460" alt="Carrier PCB Gerber Preview" /> |
+| *100 mm 1U chassis with pan/tilt solar tracker & camera aperture* | *90 × 86 mm 2-layer PCB layout with routed traces, ENIG pads & silkscreen* |
+
+* 🌐 **Interactive 3D Web Viewer:** Open [`cad/view_model.html`](cad/view_model.html) in your browser for full 3D Orbit controls, real-time Pan/Tilt servo simulation, and an **Exploded View**!
+* 📦 **PCB Fabrication Files:** Download [`hardware/gerbers.zip`](hardware/gerbers.zip) for instant manufacturing (JLCPCB, PCBWay, OSHPark).
+* 🧪 **Proteus Integration:** Tango netlist and simulation guide available in [`hardware/proteus/`](hardware/proteus/).
 
 ```powershell
+# Open interactive 3D model viewer in your browser
 Start-Process "cad\view_model.html"
 ```
 
