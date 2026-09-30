@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "satellite")(type "KiCad")(uri "${KIPRJMOD}/satellite.pretty")(options "")(descr "Satellite carrier footprints"))
+)

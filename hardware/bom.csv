@@ -1,0 +1,23 @@
+ref,part,qty,notes
+J1,AI-Thinker ESP32-CAM + 2x 1x8 female header,1,camera node
+J2,ESP32 DevKit 30-pin + 2x 1x15 female header,1,tracker/telemetry; check row spacing
+J3,SX1278 Ra-02 433 MHz module,1,solder to board or use 2.0 mm adapter; second one for ground station
+J4,1x2 pin header,1,LoRa antenna pigtail / wire
+J5 J6 J10 J11,1x2 pin header,4,flash jumper / solar / battery holder / switch
+J7 J9,INA219 breakout + 1x6 header,2,set second to 0x41 (solder A0)
+J8,TP4056 module with DW01 protection + 1x6 header,1,
+J12,5V boost module (MT3608 or similar) + 1x4 header,1,set 5.0 V before connecting
+J13,3.3V LDO module (AMS1117-3.3) + 1x3 header,1,
+J14 J15,BME280 and MPU6050 breakouts + 1x4 header,2,BME280 address 0x76
+J16 J17,SG90 or MG90S servo + 1x3 header,2,pan / tilt
+J18-J21,LDR (GL5528 or similar) + 1x2 header,4,quadrant sun sensor
+R1-R4,10k 0805 resistor,4,LDR dividers
+C1 C2,470 uF 10 V radial 8 mm,2,5 V bulk
+C3,10 uF 0805,1,3.3 V
+C4,100 nF 0805,1,3.3 V
+TP1-TP4,Test pad 2 mm,4,+5V / +3V3 / VBAT / GND
+H1-H4,M3 screw + 6 mm standoff,4,
+PV1,Solar panel 5-6V small,1,open-circuit voltage must stay <= 6 V
+BT1,18650 cell + holder,1,protected cell recommended
+ANT1,433 MHz antenna,2,one per LoRa module
+-,3D-printed frame (PLA/PETG),1,see cad/

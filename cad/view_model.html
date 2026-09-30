@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CubeSat Satellite Model - 3D Interactive Viewer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0a0e17;
+      color: #e2e8f0;
+      overflow: hidden;
+      display: flex;
+      height: 100vh;
+    }
+    #canvas-container {
+      flex: 1;
+      height: 100%;
+      position: relative;
+    }
+    #sidebar {
+      width: 320px;
+      background: rgba(15, 23, 42, 0.95);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 0.7rem;
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .card-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .control-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: #38bdf8;
+      cursor: pointer;
+    }
+    .toggle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .toggle-btn {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .toggle-btn.active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+    .specs-list {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    .specs-list span {
+      color: #e2e8f0;
+      font-weight: 500;
+    }
+    #hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+    }
+    #hud strong { color: #38bdf8; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="hud">
+      <strong>CubeSat 1U (100 mm)</strong> &bull; Click & Drag to Orbit &bull; Scroll to Zoom &bull; Right-Click to Pan
+    </div>
+  </div>
+  <aside id="sidebar">
+    <div>
+      <h1>CubeSat 1U Model <span class="badge">OpenSCAD</span></h1>
+      <p style="font-size:0.75rem; color:#64748b; margin-top:4px;">satellite.scad interactive visualization</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Assembly & Views</div>
+      <div class="control-row">
+        <div class="control-label">
+          <span>Exploded View</span>
+          <span id="val-exploded">0 mm</span>
+        </div>
+        <input type="range" id="slider-exploded" min="0" max="60" value="0">
+      </div>
+      <div class="toggle-grid">
+        <button class="toggle-btn active" id="btn-body">Body <span>✔</span></button>
+        <button class="toggle-btn active" id="btn-base">Base <span>✔</span></button>
+        <button class="toggle-btn active" id="btn-pcb">PCB <span>✔</span></button>
+        <button class="toggle-btn active" id="btn-tracker">Tracker <span>✔</span></button>
+        <button class="toggle-btn" id="btn-wireframe">Wireframe <span>✕</span></button>
+        <button class="toggle-btn active" id="btn-autorotate">Auto-Spin <span>✔</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Solar Tracker Kinematics</div>
+      <div class="control-row">
+        <div class="control-label">
+          <span>Pan Angle (Servo 1)</span>
+          <span id="val-pan">90°</span>
+        </div>
+        <input type="range" id="slider-pan" min="10" max="170" value="90">
+      </div>
+      <div class="control-row">
+        <div class="control-label">
+          <span>Tilt Angle (Servo 2)</span>
+          <span id="val-tilt">35°</span>
+        </div>
+        <input type="range" id="slider-tilt" min="20" max="160" value="35">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Model Specifications</div>
+      <div class="specs-list">
+        <div>Frame Size: <span>100 × 100 × 100 mm</span></div>
+        <div>Wall Thickness: <span>2.5 mm</span></div>
+        <div>Carrier PCB: <span>90 × 86 mm</span></div>
+        <div>Standoff Spacing: <span>80 × 76 mm (M3)</span></div>
+        <div>Solar Panel: <span>80 × 60 × 3 mm</span></div>
+        <div>Camera Aperture: <span>Ø14 mm @ X=-25.6mm</span></div>
+        <div>Antenna Mount: <span>Ø6.5 mm (Top Rear)</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    const S = 100; // 100mm cube
+    const W = 2.5;
+
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0e17);
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 1, 2000);
+    camera.position.set(180, 140, 220);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    // Orbit Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.0;
+
+    // Lights
+    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambient);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    sunLight.position.set(150, 200, 100);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.6);
+    rimLight.position.set(-150, -100, -150);
+    scene.add(rimLight);
+
+    // Grid
+    const grid = new THREE.GridHelper(300, 30, 0x1e293b, 0x0f172a);
+    grid.position.y = -S/2 - 10;
+    scene.add(grid);
+
+    // Materials
+    const aluminumMat = new THREE.MeshStandardMaterial({ color: 0xc0c8d0, roughness: 0.35, metalness: 0.65 });
+    const darkAluminumMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.6 });
+    const pcbMat = new THREE.MeshStandardMaterial({ color: 0x0f766e, roughness: 0.6, metalness: 0.2 });
+    const servoMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5, metalness: 0.1 });
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.8 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.3, metalness: 0.8 });
+    const copperMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.3, metalness: 0.7 });
+
+    const rootGroup = new THREE.Group();
+    scene.add(rootGroup);
+
+    // Body Group
+    const bodyGroup = new THREE.Group();
+    rootGroup.add(bodyGroup);
+
+    // Main hollow body walls
+    // Top wall
+    const topGeom = new THREE.BoxGeometry(S, W, S);
+    const topMesh = new THREE.Mesh(topGeom, aluminumMat);
+    topMesh.position.y = S/2 - W/2;
+    bodyGroup.add(topMesh);
+
+    // Antenna boss on top
+    const antBossGeom = new THREE.CylinderGeometry(6, 6, 4, 32);
+    const antBoss = new THREE.Mesh(antBossGeom, darkAluminumMat);
+    antBoss.position.set(0, S/2 + 2, -35);
+    bodyGroup.add(antBoss);
+    const antRodGeom = new THREE.CylinderGeometry(0.8, 0.8, 90, 16);
+    const antRod = new THREE.Mesh(antRodGeom, copperMat);
+    antRod.position.set(0, S/2 + 45, -35);
+    bodyGroup.add(antRod);
+
+    // Left wall (-X) with power switch slot
+    const leftGeom = new THREE.BoxGeometry(W, S - 2*W, S);
+    const leftMesh = new THREE.Mesh(leftGeom, aluminumMat);
+    leftMesh.position.x = -S/2 + W/2;
+    bodyGroup.add(leftMesh);
+
+    // Power switch model
+    const switchGeom = new THREE.BoxGeometry(4, 10, 5);
+    const switchMesh = new THREE.Mesh(switchGeom, new THREE.MeshStandardMaterial({ color: 0xd97706 }));
+    switchMesh.position.set(-S/2, -20, 0);
+    bodyGroup.add(switchMesh);
+
+    // Right wall (+X)
+    const rightGeom = new THREE.BoxGeometry(W, S - 2*W, S);
+    const rightMesh = new THREE.Mesh(rightGeom, aluminumMat);
+    rightMesh.position.x = S/2 - W/2;
+    bodyGroup.add(rightMesh);
+
+    // Rear wall (-Z, OpenSCAD -Y)
+    const rearGeom = new THREE.BoxGeometry(S - 2*W, S - 2*W, W);
+    const rearMesh = new THREE.Mesh(rearGeom, aluminumMat);
+    rearMesh.position.z = -S/2 + W/2;
+    bodyGroup.add(rearMesh);
+
+    // Front wall (+Z, OpenSCAD +Y) with camera aperture
+    const frontGroup = new THREE.Group();
+    frontGroup.position.z = S/2 - W/2;
+    bodyGroup.add(frontGroup);
+
+    // Front panel pieces around camera aperture (cutout at x = -25.6, y = -26)
+    const camRingGeom = new THREE.RingGeometry(6, 8.5, 32);
+    const camRing = new THREE.Mesh(camRingGeom, darkAluminumMat);
+    camRing.position.set(-25.6, -26, W/2 + 0.1);
+    frontGroup.add(camRing);
+    const camLensGeom = new THREE.CylinderGeometry(5.5, 5.5, 3, 32);
+    const camLens = new THREE.Mesh(camLensGeom, new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1, metalness: 0.9 }));
+    camLens.rotation.x = Math.PI / 2;
+    camLens.position.set(-25.6, -26, W/2);
+    frontGroup.add(camLens);
+
+    const fWallGeom = new THREE.BoxGeometry(S - 2*W, S - 2*W, W);
+    const fWall = new THREE.Mesh(fWallGeom, aluminumMat);
+    frontGroup.add(fWall);
+
+    // Base Group
+    const baseGroup = new THREE.Group();
+    rootGroup.add(baseGroup);
+
+    const basePlateGeom = new THREE.BoxGeometry(94.4, W, 94.4);
+    const basePlate = new THREE.Mesh(basePlateGeom, darkAluminumMat);
+    basePlate.position.y = -S/2 - W/2;
+    baseGroup.add(basePlate);
+
+    // 4 PCB Standoffs (80 x 76 mm)
+    const standoffGeom = new THREE.CylinderGeometry(3.5, 3.5, 6, 24);
+    const standoffs = [
+      [-40, -38], [40, -38], [-40, 38], [40, 38]
+    ];
+    standoffs.forEach(([x, z]) => {
+      const so = new THREE.Mesh(standoffGeom, goldMat);
+      so.position.set(x, -S/2 + 3, z);
+      baseGroup.add(so);
+    });
+
+    // Carrier PCB (90 x 86 mm)
+    const pcbGroup = new THREE.Group();
+    rootGroup.add(pcbGroup);
+    const pcbGeom = new THREE.BoxGeometry(90, 1.6, 86);
+    const pcbMesh = new THREE.Mesh(pcbGeom, pcbMat);
+    pcbMesh.position.set(0, -S/2 + 6.8, 0);
+    pcbGroup.add(pcbMesh);
+
+    // ESP32-CAM module block on PCB
+    const espCamGeom = new THREE.BoxGeometry(27, 4, 40);
+    const espCamMesh = new THREE.Mesh(espCamGeom, new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+    espCamMesh.position.set(-25.6, -S/2 + 9.6, 20);
+    pcbGroup.add(espCamMesh);
+
+    // ESP32 DevKit block on PCB
+    const devKitGeom = new THREE.BoxGeometry(28, 4, 52);
+    const devKitMesh = new THREE.Mesh(devKitGeom, new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+    devKitMesh.position.set(6, -S/2 + 9.6, -5);
+    pcbGroup.add(devKitMesh);
+
+    // 18650 Battery
+    const battGeom = new THREE.CylinderGeometry(9, 9, 65, 32);
+    const battMesh = new THREE.Mesh(battGeom, new THREE.MeshStandardMaterial({ color: 0x10b981 }));
+    battMesh.rotation.z = Math.PI / 2;
+    battMesh.position.set(19, -S/2 + 18, 5);
+    pcbGroup.add(battMesh);
+
+    // Tracker Pan/Tilt Group
+    const trackerGroup = new THREE.Group();
+    trackerGroup.position.set(0, S/2, 20); // Tracker anchor point on top face
+    rootGroup.add(trackerGroup);
+
+    // Pan Servo
+    const panServoMesh = new THREE.Mesh(new THREE.BoxGeometry(23, 22.5, 12.5), servoMat);
+    panServoMesh.position.y = 11.25;
+    trackerGroup.add(panServoMesh);
+
+    // Pan Rotating Group (Turntable + Tilt Servo + Solar Panel)
+    const panRotGroup = new THREE.Group();
+    panRotGroup.position.y = 22.5 + 4;
+    trackerGroup.add(panRotGroup);
+
+    const turntableMesh = new THREE.Mesh(new THREE.CylinderGeometry(12, 12, 2, 32), darkAluminumMat);
+    turntableMesh.position.y = 1;
+    panRotGroup.add(turntableMesh);
+
+    // Fork bracket
+    [-18, 18].forEach(x => {
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(2, 20, 14), darkAluminumMat);
+      arm.position.set(x, 11, 0);
+      panRotGroup.add(arm);
+    });
+
+    // Tilt Servo
+    const tiltServoMesh = new THREE.Mesh(new THREE.BoxGeometry(12.5, 22.5, 23), servoMat);
+    tiltServoMesh.position.set(-25, 11, 0);
+    panRotGroup.add(tiltServoMesh);
+
+    // Tilt Rotating Group (Holds Solar Panel)
+    const tiltRotGroup = new THREE.Group();
+    tiltRotGroup.position.set(0, 21, 0);
+    panRotGroup.add(tiltRotGroup);
+
+    // Solar Panel (80 x 60 x 3 mm)
+    const panelMesh = new THREE.Mesh(new THREE.BoxGeometry(80, 3, 60), panelMat);
+    panelMesh.position.y = 4;
+    tiltRotGroup.add(panelMesh);
+
+    // 4-quadrant LDR sensor cross
+    const ldrCenter = new THREE.Mesh(new THREE.BoxGeometry(12, 4, 12), darkAluminumMat);
+    ldrCenter.position.set(0, 5, 0);
+    tiltRotGroup.add(ldrCenter);
+
+    // Controls Logic
+    const sliderExploded = document.getElementById('slider-exploded');
+    const valExploded = document.getElementById('val-exploded');
+    const sliderPan = document.getElementById('slider-pan');
+    const valPan = document.getElementById('val-pan');
+    const sliderTilt = document.getElementById('slider-tilt');
+    const valTilt = document.getElementById('val-tilt');
+
+    sliderExploded.addEventListener('input', e => {
+      const d = parseFloat(e.target.value);
+      valExploded.textContent = `${d} mm`;
+      bodyGroup.position.y = d * 0.3;
+      baseGroup.position.y = -d;
+      pcbGroup.position.y = -d * 0.5;
+      trackerGroup.position.y = S/2 + d * 0.8;
+    });
+
+    sliderPan.addEventListener('input', e => {
+      const deg = parseFloat(e.target.value);
+      valPan.textContent = `${deg}°`;
+      panRotGroup.rotation.y = (deg - 90) * (Math.PI / 180);
+    });
+
+    sliderTilt.addEventListener('input', e => {
+      const deg = parseFloat(e.target.value);
+      valTilt.textContent = `${deg}°`;
+      tiltRotGroup.rotation.x = (deg - 35) * (Math.PI / 180);
+    });
+
+    // Toggle Buttons
+    function toggle(btn, obj) {
+      btn.addEventListener('click', () => {
+        obj.visible = !obj.visible;
+        btn.classList.toggle('active', obj.visible);
+        btn.querySelector('span').textContent = obj.visible ? '✔' : '✕';
+      });
+    }
+    toggle(document.getElementById('btn-body'), bodyGroup);
+    toggle(document.getElementById('btn-base'), baseGroup);
+    toggle(document.getElementById('btn-pcb'), pcbGroup);
+    toggle(document.getElementById('btn-tracker'), trackerGroup);
+
+    const btnWireframe = document.getElementById('btn-wireframe');
+    btnWireframe.addEventListener('click', () => {
+      const wf = !aluminumMat.wireframe;
+      [aluminumMat, darkAluminumMat, pcbMat, servoMat, panelMat].forEach(m => m.wireframe = wf);
+      btnWireframe.classList.toggle('active', wf);
+      btnWireframe.querySelector('span').textContent = wf ? '✔' : '✕';
+    });
+
+    const btnAutoRotate = document.getElementById('btn-autorotate');
+    btnAutoRotate.addEventListener('click', () => {
+      controls.autoRotate = !controls.autoRotate;
+      btnAutoRotate.classList.toggle('active', controls.autoRotate);
+      btnAutoRotate.querySelector('span').textContent = controls.autoRotate ? '✔' : '✕';
+    });
+
+    // Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    // Render loop
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

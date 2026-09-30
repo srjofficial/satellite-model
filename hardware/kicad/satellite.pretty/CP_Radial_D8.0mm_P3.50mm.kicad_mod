@@ -1,0 +1,13 @@
+(footprint "CP_Radial_D8.0mm_P3.50mm"
+    (version 20240108)
+    (generator "pcbnew")
+    (generator_version "8.0")
+    (layer "F.Cu")
+    (descr "Radial electrolytic, 8 mm")
+    (property "Reference" "REF**" (at 1.75 -5.2 0) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))
+    (property "Value" "CP_Radial_D8.0mm_P3.50mm" (at 1.75 6.2 0) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))
+    (attr through_hole)
+    (fp_rect (start -2.5 -4.2) (end 6 4.2) (stroke (width 0.12) (type solid)) (fill none) (layer "F.SilkS"))
+    (pad "1" thru_hole rect (at 0 0) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask") (remove_unused_layers no))
+    (pad "2" thru_hole circle (at 3.5 0) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask") (remove_unused_layers no))
+)

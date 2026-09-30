@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.venv/
+.pio/
+build/
+received/
+ground-station-ui/received/
+images/received/
+*.log
+*-backups/
+*.kicad_prl
+*.kicad_pcb-bak
+*.kicad_sch-bak
+fp-info-cache
+.DS_Store
+Thumbs.db
